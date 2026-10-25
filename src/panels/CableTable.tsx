@@ -19,9 +19,8 @@ export function CableTable({ cables, devices, desk, deskHeight, slack, activeCab
   const ports = indexPorts(devices)
 
   return (
-    <div className="panel">
-      <h2>케이블</h2>
-      <p className="hint">
+    <div className="panel cable-panel">
+      <p className="hint top-hint">
         보유 길이를 실측값으로 바꾸면 <code>verified</code> 로 표시된다. 경계를 넘는 케이블만 상판 높이를 제한한다.
         “권장”은 부족할 때 사면 되는 가장 짧은 규격 길이다.
       </p>
