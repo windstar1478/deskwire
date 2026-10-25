@@ -87,9 +87,6 @@ export function buildDevice(d: Device, selected: boolean): THREE.Group {
     case 'dock':
       dock(g, w, h, dep, shell)
       break
-    case 'ns2':
-      handheld(g, w, h, dep)
-      break
     case 'guitar':
       guitar(g, w, h, dep)
       break
@@ -208,26 +205,38 @@ function headphoneStand(g: THREE.Group, w: number, h: number, dep: number) {
   }
 }
 
-/** 헤드폰: 헤드밴드 아치 + 좌우 이어컵. */
+/**
+ * 헤드폰: 헤드밴드 아치 + 이어컵.
+ * 거치대 후크에 걸면 이어컵이 좌우가 아니라 **앞뒤로** 늘어진다.
+ * 그래서 컵 축과 밴드 아치는 z(앞뒤)를 따라 선다.
+ */
 function headphones(g: THREE.Group, w: number, h: number, dep: number, color: number) {
   const m = mat(color, { roughness: 0.75 })
+  const span = dep * 0.36 // 이어컵 중심까지의 거리 (앞뒤)
+
   // 후크에 걸려 매달리므로 헤드밴드가 상자 위쪽에 온다.
-  const band = new THREE.TorusGeometry(w * 0.36, w * 0.045, 10, 28, Math.PI)
-  add(g, band, m, 0, h * 0.28, 0)
-  for (const sx of [-1, 1]) {
-    const cup = add(g, cyl(h * 0.24, dep * 0.55, 26), m, sx * w * 0.36, h * 0.02, 0)
-    cup.rotation.set(Math.PI / 2, 0, 0)
-    cup.rotation.z = Math.PI / 2
+  const band = add(
+    g,
+    new THREE.TorusGeometry(span, dep * 0.045, 10, 28, Math.PI),
+    m,
+    0,
+    h * 0.28,
+    0,
+  )
+  band.rotation.y = Math.PI / 2 // 아치를 앞뒤 평면으로 세운다
+
+  for (const sz of [-1, 1]) {
+    const cup = add(g, cyl(h * 0.24, w * 0.55, 26), m, 0, h * 0.02, sz * span)
+    cup.rotation.x = Math.PI / 2 // 컵 축을 앞뒤로
     const pad = add(
       g,
-      cyl(h * 0.2, dep * 0.3, 26),
+      cyl(h * 0.2, w * 0.3, 26),
       mat(C.black, { roughness: 0.95 }),
-      sx * (w * 0.36 - sx * dep * 0.2),
-      h * 0.02,
       0,
+      h * 0.02,
+      sz * (span - w * 0.2),
     )
-    pad.rotation.set(Math.PI / 2, 0, 0)
-    pad.rotation.z = Math.PI / 2
+    pad.rotation.x = Math.PI / 2
   }
 }
 
@@ -295,17 +304,35 @@ function disc(g: THREE.Group, w: number, h: number, color: number) {
   add(g, cyl(w / 2, h, 32), mat(color, { roughness: 0.8 }), 0, 0, 0)
 }
 
-/** NS2 독: 살짝 기울어진 슬롯이 있는 몸통. */
+/**
+ * NS2 독 + 본체 일체.
+ * 본체가 독 안으로 들어가는 구조라 하나의 덩어리로 그린다.
+ * 앞면에 화면, 좌우에 조이콘(검정)이 보인다.
+ */
 function dock(g: THREE.Group, w: number, h: number, dep: number, shell: number) {
   add(g, new THREE.BoxGeometry(w, h, dep), mat(shell), 0, 0, 0)
-  add(g, new THREE.BoxGeometry(w * 0.8, 6, dep * 0.45), mat(C.screen), 0, h / 2 - 2, 0)
-}
-
-/** 스위치 본체: 화면 + 좌우 조이콘. */
-function handheld(g: THREE.Group, w: number, h: number, dep: number) {
-  add(g, new THREE.BoxGeometry(w * 0.66, h, dep), mat(C.screen, { emissive: 0x0d1a20 }), 0, 0, 0)
-  add(g, new THREE.BoxGeometry(w * 0.17, h, dep * 1.4), mat(0x3a6fa8), -w * 0.415, 0, 0)
-  add(g, new THREE.BoxGeometry(w * 0.17, h, dep * 1.4), mat(0xa8443a), w * 0.415, 0, 0)
+  const face = dep / 2 + 1
+  add(
+    g,
+    new THREE.BoxGeometry(w * 0.58, h * 0.64, 2),
+    mat(C.screen, { roughness: 0.3, emissive: 0x0b1a20 }),
+    0,
+    h * 0.07,
+    face,
+  )
+  // 조이콘 — 검정
+  for (const sx of [-1, 1]) {
+    add(
+      g,
+      new THREE.BoxGeometry(w * 0.17, h * 0.68, dep * 0.92),
+      mat(C.black, { roughness: 0.6 }),
+      sx * w * 0.395,
+      h * 0.07,
+      0,
+    )
+  }
+  // 독에 꽂히는 자리
+  add(g, new THREE.BoxGeometry(w * 0.74, 5, dep * 0.5), mat(C.shellDark), 0, -h / 2 + 4, 0)
 }
 
 /** 기타: 바디 + 넥 + 헤드. 세워 둔 상태. */
