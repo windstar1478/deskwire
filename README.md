@@ -20,6 +20,17 @@ npm test         # 모델 계층 테스트
 npm run build    # 프로덕션 빌드
 ```
 
+## 배포
+
+Vercel이 저장소를 그대로 읽어간다. `vercel.json` 에 빌드 설정이 들어 있어
+Import 후 따로 만질 것이 없다.
+
+1. [vercel.com/new](https://vercel.com/new) → Import Git Repository → 이 저장소 선택
+2. Framework 가 **Vite** 로 잡히는지만 확인하고 Deploy
+3. 이후 브랜치에 푸시할 때마다 자동으로 다시 배포된다
+
+환경 변수는 필요 없다. 빌드는 `npm ci && npm run build`, 산출물은 `dist/`.
+
 ## 구조
 
 ```
