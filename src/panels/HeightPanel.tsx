@@ -23,7 +23,7 @@ export function HeightPanel({
   const index = indexDevices(devices)
   const ports = indexPorts(devices)
   const ceiling = maxDeskHeight(cables, ports, index, desk, slack)
-  const short = shortagesAt(cables, workingHeight, ports, index, desk, slack)
+  const short = shortagesAt(cables, workingHeight, ports, index, desk, slack, devices)
   const nameOf = (id: string) => cables.find((c) => c.id === id)?.name ?? id
 
   return (

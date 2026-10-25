@@ -103,7 +103,7 @@ export function SceneView({
         const b = ownerOf(c.to, ports, index)
         if (!a || !b) return null
         // 3D·길이 계산과 같은 경로를 투영해서 그린다.
-        const pts = routeCable(a, b, deskHeight, index, desk, routeOptsFor(c)).map((p) => {
+        const pts = routeCable(a, b, deskHeight, index, desk, routeOptsFor(c, devices)).map((p) => {
           const q = project(p, view)
           return toScreen(q.u, q.v)
         })

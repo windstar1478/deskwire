@@ -52,8 +52,15 @@ export default function App() {
 
   const shortCount = useMemo(() => {
     const index = indexDevices(devices)
-    return shortagesAt(cables, state.workingHeight, indexPorts(devices), index, desk, state.slack)
-      .length
+    return shortagesAt(
+      cables,
+      state.workingHeight,
+      indexPorts(devices),
+      index,
+      desk,
+      state.slack,
+      devices,
+    ).length
   }, [cables, devices, state.workingHeight, state.slack])
 
   return (
@@ -61,7 +68,7 @@ export default function App() {
       <header>
         <div className="brand">
           <span className="mark" aria-hidden="true" />
-          patchmap
+          deskwire
         </div>
 
         <div className="seg" role="group" aria-label="뷰 전환">

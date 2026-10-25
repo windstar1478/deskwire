@@ -211,10 +211,11 @@ function headphoneStand(g: THREE.Group, w: number, h: number, dep: number) {
 /** 헤드폰: 헤드밴드 아치 + 좌우 이어컵. */
 function headphones(g: THREE.Group, w: number, h: number, dep: number, color: number) {
   const m = mat(color, { roughness: 0.75 })
+  // 후크에 걸려 매달리므로 헤드밴드가 상자 위쪽에 온다.
   const band = new THREE.TorusGeometry(w * 0.36, w * 0.045, 10, 28, Math.PI)
-  add(g, band, m, 0, h * 0.1, 0)
+  add(g, band, m, 0, h * 0.28, 0)
   for (const sx of [-1, 1]) {
-    const cup = add(g, cyl(h * 0.24, dep * 0.55, 26), m, sx * w * 0.36, h * 0.1, 0)
+    const cup = add(g, cyl(h * 0.24, dep * 0.55, 26), m, sx * w * 0.36, h * 0.02, 0)
     cup.rotation.set(Math.PI / 2, 0, 0)
     cup.rotation.z = Math.PI / 2
     const pad = add(
@@ -222,7 +223,7 @@ function headphones(g: THREE.Group, w: number, h: number, dep: number, color: nu
       cyl(h * 0.2, dep * 0.3, 26),
       mat(C.black, { roughness: 0.95 }),
       sx * (w * 0.36 - sx * dep * 0.2),
-      h * 0.1,
+      h * 0.02,
       0,
     )
     pad.rotation.set(Math.PI / 2, 0, 0)

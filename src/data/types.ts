@@ -1,4 +1,4 @@
-/** patchmap 도메인 타입. data.json 의 형태를 그대로 따른다. */
+/** deskwire 도메인 타입. data.json 의 형태를 그대로 따른다. */
 
 export type DeviceId = string
 export type PortId = string

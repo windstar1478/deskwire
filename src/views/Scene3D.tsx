@@ -318,7 +318,7 @@ export function Scene3D({
       if (!a || !b) continue
       const active = activeCableIds.has(cab.id)
       // 길이 계산과 똑같은 경로를 그린다. 화면과 숫자가 어긋나지 않게.
-      const pts = routeCable(a, b, deskHeight, index, desk, routeOptsFor(cab)).map(
+      const pts = routeCable(a, b, deskHeight, index, desk, routeOptsFor(cab, devices)).map(
         (p) => new THREE.Vector3(p.x, p.y, sz(p.z, desk.d)),
       )
       if (pts.length < 2) continue

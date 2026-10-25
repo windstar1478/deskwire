@@ -6,6 +6,7 @@ import { DEFAULT_SLACK, type SlackRule } from './model/geometry'
 
 /** 저장 스키마 버전. data.json 이 바뀌면 올린다 (M8 기본값: 불일치 시 초기화). */
 export const SCHEMA_VERSION = 3
+// 이름이 deskwire 로 바뀌었지만 키는 유지한다 — 바꾸면 저장해 둔 배치가 날아간다.
 const STORAGE_KEY = 'patchmap:v1'
 
 /** 질문 6 답변: 평소 700~710mm 에서 쓴다. 위쪽을 잡아 710 을 기준으로 둔다. */

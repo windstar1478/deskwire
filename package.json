@@ -1,5 +1,5 @@
 {
-  "name": "patchmap",
+  "name": "deskwire",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -23,5 +23,6 @@
     "typescript": "^5.6.3",
     "vite": "^5.4.11",
     "vitest": "^2.1.8"
-  }
+  },
+  "description": "모션데스크 셋업 플래너 — 케이블 경로·길이와 기기 배치를 3D로 확인한다."
 }

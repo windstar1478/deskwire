@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { desk, devices, plannedDevices } from '../data/setup'
-import { absoluteY, indexDevices } from './mount'
+import { cables, desk, devices, plannedDevices } from '../data/setup'
+import { indexPorts, ownerOf, routeOptsFor } from './derive'
+import { obstaclesFor, pathHits } from './obstacle'
+import { absoluteY, indexDevices, supportChain } from './mount'
 import { cableHoleCenter, corridorLevel, routeCable, routeLength } from './route'
 
 const dIndex = indexDevices([...devices, ...plannedDevices])
@@ -103,5 +105,45 @@ describe('배선 경로', () => {
     const low = routeLength(routeCable('pc', 'stand', desk.hMin, dIndex, desk))
     const high = routeLength(routeCable('pc', 'stand', desk.hMax, dIndex, desk))
     expect(high).toBeGreaterThan(low)
+  })
+})
+
+describe('선이 다른 물건을 뚫지 않는다', () => {
+  // 보유 기기만 본다. 추가 예정 기기는 켰을 때만 경로에 끼어든다.
+  const idx = indexDevices(devices)
+  const pIdx = indexPorts(devices)
+
+  /**
+   * 양끝 기기와 그것들을 받치는 것들을 뺀 나머지를 뚫는지 본다.
+   * 헤드폰 선이 제 거치대를 타고 내려오는 건 관통이 아니다.
+   */
+  function hitsFor(cable: (typeof cables)[number], avoid = true, h = H) {
+    const a = ownerOf(cable.from, pIdx, idx)
+    const b = ownerOf(cable.to, pIdx, idx)
+    if (!a || !b) return []
+    const path = routeCable(a, b, h, idx, desk, routeOptsFor(cable, avoid ? devices : undefined))
+    const exclude = new Set([...supportChain(a, idx), ...supportChain(b, idx)])
+    return pathHits(path, obstaclesFor(devices, exclude, h, idx))
+  }
+
+  it('모든 케이블이 양끝 기기 외에는 아무것도 통과하지 않는다', () => {
+    const offenders = cables
+      .map((c) => ({ id: c.id, hits: hitsFor(c) }))
+      .filter((r) => r.hits.length > 0)
+    expect(offenders).toEqual([])
+  })
+
+  it('회피를 끄면 실제로 뚫는 케이블이 있다 — 회피가 일을 하고 있다는 뜻', () => {
+    const offenders = cables.filter((c) => hitsFor(c, false).length > 0)
+    expect(offenders.length).toBeGreaterThan(0)
+  })
+
+  it('상판을 어느 높이로 올려도 뚫지 않는다', () => {
+    for (const h of [desk.hMin, 800, 900, 1100, desk.hMax]) {
+      const offenders = cables
+        .map((c) => ({ id: c.id, hits: hitsFor(c, true, h) }))
+        .filter((r) => r.hits.length > 0)
+      expect({ h, offenders }).toEqual({ h, offenders: [] })
+    }
   })
 })

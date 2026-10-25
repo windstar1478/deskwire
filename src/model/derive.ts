@@ -29,9 +29,13 @@ export function portOf(endpoint: EndpointId, ports: PortIndex): Port | undefined
   return ports.get(endpoint)?.port
 }
 
-/** 그 케이블이 배선트레이를 타는가. 간헐 연결은 타지 않는다. */
-export function routeOptsFor(cable: Cable) {
-  return { direct: cable.intermittent === true }
+/**
+ * 그 케이블의 경로 옵션.
+ * - 간헐 연결(기타)은 배선트레이를 타지 않는다.
+ * - avoid 를 주면 다른 기기를 뚫지 않도록 통로를 고른다.
+ */
+export function routeOptsFor(cable: Cable, avoid?: readonly Device[]) {
+  return { direct: cable.intermittent === true, avoid }
 }
 
 /** 길이 판정 대상인가. 동글처럼 직결되는 것은 lengthMm 이 0 이라 대상이 아니다. */
@@ -64,11 +68,15 @@ export function requiredLength(
   devices: DeviceIndex,
   desk: Desk,
   slack: SlackRule = DEFAULT_SLACK,
+  avoid?: readonly Device[],
 ): number | undefined {
   const a = ownerOf(cable.from, ports, devices)
   const b = ownerOf(cable.to, ports, devices)
   if (!a || !b) return undefined
-  return applySlack(pathLength(a, b, deskHeight, devices, desk, routeOptsFor(cable)), slack)
+  return applySlack(
+    pathLength(a, b, deskHeight, devices, desk, routeOptsFor(cable, avoid)),
+    slack,
+  )
 }
 
 export interface CableFit {
@@ -90,9 +98,10 @@ export function cableFit(
   devices: DeviceIndex,
   desk: Desk,
   slack: SlackRule = DEFAULT_SLACK,
+  avoid?: readonly Device[],
 ): CableFit {
   const crosses = crossesBoundary(cable, ports, devices)
-  const required = requiredLength(cable, deskHeight, ports, devices, desk, slack)
+  const required = requiredLength(cable, deskHeight, ports, devices, desk, slack, avoid)
   const have = hasPhysicalLength(cable) ? cable.lengthMm : undefined
   if (required === undefined || have === undefined) {
     return { cable, crosses, required, have, marginMm: undefined, status: 'unknown' }
@@ -184,9 +193,10 @@ export function shortagesAt(
   devices: DeviceIndex,
   desk: Desk,
   slack: SlackRule = DEFAULT_SLACK,
+  avoid?: readonly Device[],
 ): CableFit[] {
   return cables
-    .map((c) => cableFit(c, height, ports, devices, desk, slack))
+    .map((c) => cableFit(c, height, ports, devices, desk, slack, avoid))
     .filter((f) => f.status === 'short')
     .sort((a, b) => (a.marginMm ?? 0) - (b.marginMm ?? 0))
 }

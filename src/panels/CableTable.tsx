@@ -38,7 +38,7 @@ export function CableTable({ cables, devices, desk, deskHeight, slack, activeCab
           </thead>
           <tbody>
             {cables.map((c) => {
-              const fit = cableFit(c, deskHeight, ports, index, desk, slack)
+              const fit = cableFit(c, deskHeight, ports, index, desk, slack, devices)
               const mismatch = typeMismatch(c, ports)
               const dim = !activeCableIds.has(c.id)
               return (

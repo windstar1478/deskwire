@@ -1,5 +1,6 @@
-import type { Desk, DeviceId, Vec3 } from '../data/types'
-import { absoluteCenter, lineageOf, type DeviceIndex } from './mount'
+import type { Desk, Device, DeviceId, Vec3 } from '../data/types'
+import { absoluteCenter, lineageOf, supportChain, type DeviceIndex } from './mount'
+import { obstaclesFor, pathHits, type Box } from './obstacle'
 
 export type Point = { x: number; y: number; z: number }
 
@@ -26,6 +27,11 @@ export interface RouteOptions {
    * 기타처럼 연주할 때만 전면 잭에 꽂는 케이블은 배선트레이를 타지 않는다.
    */
   direct?: boolean
+  /**
+   * 피해 가야 할 기기 목록. 주면 경로가 기기를 뚫지 않도록 통로를 고른다.
+   * 양끝에 꽂히는 기기는 여기서 알아서 뺀다.
+   */
+  avoid?: readonly Device[]
 }
 
 export function routeCable(
@@ -52,32 +58,95 @@ export function routeCable(
     return dedupe([pa, { x: pb.x, y: pa.y, z: pa.z }, { x: pb.x, y: pa.y, z: pb.z }, pb])
   }
 
-  // 상판 위끼리 — 받침대 뒤쪽을 타고 넘어간다.
+  const boxes = obstacleBoxes(a, b, deskHeight, index, opts)
+
+  // 상판 위끼리 — 공중을 가로지르지 않고 상판 바로 위를 타고 간다.
+  const surfaceY = deskHeight + SURFACE_CLEARANCE
   if (aTop && bTop) {
-    return dedupe([
-      pa,
-      { x: pa.x, y: pa.y, z: backZ },
-      { x: pb.x, y: pa.y, z: backZ },
-      { x: pb.x, y: pb.y, z: backZ },
-      pb,
-    ])
+    const build = (cz: number) =>
+      dedupe([
+        pa,
+        { x: pa.x, y: surfaceY, z: pa.z },
+        { x: pa.x, y: surfaceY, z: cz },
+        { x: pb.x, y: surfaceY, z: cz },
+        { x: pb.x, y: surfaceY, z: pb.z },
+        pb,
+      ])
+    // 뒤쪽부터 앞으로 훑으며 아무것도 뚫지 않는 통로를 고른다.
+    return pickClear(build, backCandidates(backZ), boxes)
   }
 
   // 한쪽이라도 상판 아래(트레이·바닥)면 배선 통로를 쓴다.
-  const enterA = descend(pa, aTop, corridorY, corridorZ, hole)
-  const enterB = descend(pb, bTop, corridorY, corridorZ, hole)
+  const build = (cz: number) => {
+    const enterA = descend(pa, aTop, surfaceY, corridorY, cz, hole)
+    const enterB = descend(pb, bTop, surfaceY, corridorY, cz, hole)
+    return dedupe([
+      pa,
+      ...enterA,
+      { x: enterA.at(-1)?.x ?? pa.x, y: corridorY, z: cz },
+      { x: enterB.at(-1)?.x ?? pb.x, y: corridorY, z: cz },
+      ...[...enterB].reverse(),
+      pb,
+    ])
+  }
+  return pickClear(build, corridorCandidates(corridorZ, desk), boxes)
+}
 
-  return dedupe([
-    pa,
-    ...enterA,
-    { x: enterA.at(-1)?.x ?? pa.x, y: corridorY, z: corridorZ },
-    { x: enterB.at(-1)?.x ?? pb.x, y: corridorY, z: corridorZ },
-    ...[...enterB].reverse(),
-    pb,
-  ])
+/** 양끝 기기를 뺀 장애물 상자들. avoid 를 주지 않으면 검사하지 않는다. */
+function obstacleBoxes(
+  a: DeviceId,
+  b: DeviceId,
+  deskHeight: number,
+  index: DeviceIndex,
+  opts: RouteOptions,
+): Box[] {
+  if (!opts.avoid) return []
+  // 양끝 기기와, 그것들을 받치고 있는 것들은 장애물이 아니다.
+  const exclude = new Set([...supportChain(a, index), ...supportChain(b, index)])
+  return obstaclesFor(opts.avoid, exclude, deskHeight, index)
+}
+
+/**
+ * 후보 통로를 순서대로 시도해 아무것도 뚫지 않는 첫 경로를 쓴다.
+ * 전부 막히면 가장 적게 걸리는 것을 쓴다 — 경로가 아예 없는 것보다 낫다.
+ */
+function pickClear(
+  build: (z: number) => Point[],
+  candidates: readonly number[],
+  boxes: readonly Box[],
+): Point[] {
+  if (boxes.length === 0) return build(candidates[0]!)
+  let best: { path: Point[]; hits: number } | undefined
+  for (const z of candidates) {
+    const path = build(z)
+    const hits = pathHits(path, boxes).length
+    if (hits === 0) return path
+    if (!best || hits < best.hits) best = { path, hits }
+  }
+  return best!.path
+}
+
+/** 상판 위 통로 후보 — 뒤쪽부터 앞으로. */
+function backCandidates(backZ: number): number[] {
+  const out: number[] = []
+  for (let z = backZ; z >= 60; z -= 20) out.push(z)
+  return out
+}
+
+/** 상판 아래 통로 후보 — 트레이 위치에서 시작해 앞뒤로 벌려 본다. */
+function corridorCandidates(corridorZ: number, desk: Desk): number[] {
+  const out = [corridorZ]
+  for (let d = 20; d <= 360; d += 20) {
+    if (corridorZ - d > 40) out.push(corridorZ - d)
+    if (corridorZ + d < desk.d - 20) out.push(corridorZ + d)
+  }
+  return out
 }
 
 /** 배선 통로(트레이 안쪽)의 높이. */
+/** 상판 위를 기는 선의 높이. 표면에서 살짝 띄운다. */
+export const SURFACE_CLEARANCE = 12
+
 export function corridorLevel(deskHeight: number, desk: Desk): number {
   const trayH = desk.tray?.h ?? 120
   return deskHeight - desk.thickness - trayH / 2
@@ -97,15 +166,19 @@ function isAboveDesktop(
 function descend(
   p: Point,
   fromTop: boolean,
+  surfaceY: number,
   corridorY: number,
   corridorZ: number,
   hole: { x: number; z: number } | undefined,
 ): Point[] {
   if (fromTop && hole) {
-    // 축을 따라 배선홈까지 간 다음 수직으로 내려간다. 대각선으로 상판을 가로지르지 않게.
+    // 상판 위로 내려와 통로까지 물러선 뒤, 축을 따라 배선홈으로 가서 수직으로 떨어진다.
+    // 통로(corridorZ)는 바깥에서 후보를 훑어 정하므로 여기서 기기 z 를 그대로 쓰지 않는다.
     return [
-      { x: hole.x, y: p.y, z: p.z },
-      { x: hole.x, y: p.y, z: hole.z },
+      { x: p.x, y: surfaceY, z: p.z },
+      { x: p.x, y: surfaceY, z: corridorZ },
+      { x: hole.x, y: surfaceY, z: corridorZ },
+      { x: hole.x, y: surfaceY, z: hole.z },
       { x: hole.x, y: corridorY, z: hole.z },
       { x: hole.x, y: corridorY, z: corridorZ },
     ]

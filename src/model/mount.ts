@@ -28,6 +28,20 @@ export function rootMount(id: DeviceId, index: DeviceIndex): Exclude<Mount, { on
   return 'floor'
 }
 
+/** 그 기기를 받치고 있는 것들 (자기 자신 포함). 케이블은 제 받침을 타고 다닌다. */
+export function supportChain(id: DeviceId, index: DeviceIndex): DeviceId[] {
+  const out: DeviceId[] = []
+  const seen = new Set<DeviceId>()
+  let cur: DeviceId | undefined = id
+  while (cur !== undefined && !seen.has(cur)) {
+    seen.add(cur)
+    out.push(cur)
+    const m: Mount | undefined = index.get(cur)?.mount
+    cur = m !== undefined && typeof m === 'object' ? m.on : undefined
+  }
+  return out
+}
+
 export function lineageOf(id: DeviceId, index: DeviceIndex): Lineage {
   const root = rootMount(id, index)
   return root === 'desktop' || root === 'under-desktop' ? 'desk' : 'ground'
