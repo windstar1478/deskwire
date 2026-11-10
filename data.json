@@ -363,13 +363,13 @@
       },
       "mount": "desktop",
       "pos": {
-        "x": 1190,
+        "x": 900,
         "z": 660,
         "yOff": 0
       },
       "weightKg": 0.6,
       "verified": true,
-      "notes": "받침대(높이 90) 아래 배치. 전면 잭 사용 시 같은 채널 XLR 비활성화. 팬텀 48V는 두 XLR 공통, 개별 제어 불가. 게인 최대 69dB. Monitor Out과 헤드폰 OUT은 같은 신호를 공유.",
+      "notes": "받침대(높이 90) 아래 배치. 전면 잭 사용 시 같은 채널 XLR 비활성화. 팬텀 48V는 두 XLR 공통, 개별 제어 불가. 게인 최대 69dB. Monitor Out과 헤드폰 OUT은 같은 신호를 공유. 책상 정중앙(사용자 확인).",
       "ports": [
         {
           "id": "itf-in1",
@@ -1047,9 +1047,9 @@
       "from": "itf-outL",
       "to": "spk-trsL",
       "type": "trs",
-      "lengthMm": 3000,
+      "lengthMm": 1500,
       "planned": true,
-      "notes": "★ 미구매. 6.35mm TRS 균형 케이블. 기타/PC 소리를 스피커로 보내는 핵심 경로."
+      "notes": "6.35mm TRS 균형 케이블 1.5m. 구매 예정(홈플래닛 5.5-5.5 TRS). 기타/PC 소리를 스피커로 보내는 핵심 경로."
     },
     {
       "id": "c-trsR",
@@ -1057,9 +1057,9 @@
       "from": "itf-outR",
       "to": "spk-trsR",
       "type": "trs",
-      "lengthMm": 3000,
+      "lengthMm": 1500,
       "planned": true,
-      "notes": "★ 미구매. 위와 동일."
+      "notes": "6.35mm TRS 균형 케이블 1.5m. 구매 예정(홈플래닛 5.5-5.5 TRS). 기타/PC 소리를 스피커로 보내는 핵심 경로."
     },
     {
       "id": "c-ns2-rca",
