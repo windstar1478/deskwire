@@ -137,42 +137,53 @@ describe('상판 높이 한계 — 점검결과 A', () => {
 describe('실사용 높이 710mm — 질문 6 답변 반영', () => {
   const H = 710
 
-  it('모자란 것은 PC 에서 상판으로 올라오는 네 가닥이며, 여유가 적은 순으로 정렬된다', () => {
-    const short = shortagesAt(cables, H, pIndex, dIndex, desk, DEFAULT_SLACK)
-    expect(short.map((f) => f.cable.id)).toEqual([
-      'c-usb-st',
+  it('모자란 것은 모니터·받침대로 가는 네 가닥이며, 여유가 적은 순으로 정렬된다', () => {
+    const short = shortagesAt(cables, H, pIndex, dIndex, desk, DEFAULT_SLACK, devices)
+    expect(short.map((f) => f.cable.id).sort()).toEqual([
       'c-dp-mon',
+      'c-hdmi-mon',
       'c-usb-mon',
-      'c-usb-itf',
+      'c-usb-st',
     ])
     expect(short[0]!.marginMm).toBeLessThan(short.at(-1)!.marginMm!)
   })
 
-  it('권장 교체 길이를 규격에서 골라준다', () => {
-    const short = shortagesAt(cables, H, pIndex, dIndex, desk, DEFAULT_SLACK)
+  it('모니터 케이블은 암을 타고 도느라 유독 길다', () => {
+    // 모니터는 좌측 30% 후면 클램프의 암에 달려 있다. 선은 허공을 가로지르지 않고
+    // 암이 선 자리까지 갔다가 암을 타고 올라간다 — 그만큼 왕복이 붙는다.
+    const short = shortagesAt(cables, H, pIndex, dIndex, desk, DEFAULT_SLACK, devices)
     const rec = Object.fromEntries(short.map((f) => [f.cable.id, f.recommendMm]))
-    expect(rec['c-usb-st']).toBe(1500)
-    expect(rec['c-dp-mon']).toBe(2000)
+    expect(rec['c-dp-mon']).toBe(3000)
+    expect(rec['c-usb-mon']).toBe(3000)
+    expect(rec['c-usb-st']).toBe(2000)
+  })
+
+  it('TRS 1.5m 는 2i2 가 정중앙이면 충분하다', () => {
+    for (const id of ['c-trsL', 'c-trsR']) {
+      const fit = cableFit(cables.find((c) => c.id === id)!, H, pIndex, dIndex, desk, DEFAULT_SLACK, devices)
+      expect(fit.have).toBe(1500)
+      expect(fit.status).toBe('ok')
+    }
   })
 
   it('권장 길이대로 바꾸면 전부 해소된다', () => {
-    const short = shortagesAt(cables, H, pIndex, dIndex, desk, DEFAULT_SLACK)
+    const short = shortagesAt(cables, H, pIndex, dIndex, desk, DEFAULT_SLACK, devices)
     const fixed = cables.map((c) => {
       const rec = short.find((f) => f.cable.id === c.id)?.recommendMm
       return rec ? { ...c, lengthMm: rec } : c
     })
-    expect(shortagesAt(fixed, H, pIndex, dIndex, desk, DEFAULT_SLACK)).toEqual([])
+    expect(shortagesAt(fixed, H, pIndex, dIndex, desk, DEFAULT_SLACK, devices)).toEqual([])
   })
 
   it('기타 케이블은 트레이를 타지 않으므로 여유가 남는다', () => {
     // 연주할 때만 전면 잭에 꽂으므로 배선트레이 경로를 강제하면 안 된다.
-    const fit = cableFit(cables.find((c) => c.id === 'c-gtr')!, H, pIndex, dIndex, desk)
+    const fit = cableFit(cables.find((c) => c.id === 'c-gtr')!, H, pIndex, dIndex, desk, undefined, devices)
     expect(fit.status).toBe('ok')
   })
 
   it('평소 쓰는 높이는 최저 630 보다 위이므로, 630 기준 판정보다 빡빡하다', () => {
     const at630 = shortagesAt(cables, 630, pIndex, dIndex, desk, { ratio: 0.1, fixedMm: 0 })
-    const at710 = shortagesAt(cables, H, pIndex, dIndex, desk, { ratio: 0.1, fixedMm: 0 })
+    const at710 = shortagesAt(cables, H, pIndex, dIndex, desk, { ratio: 0.1, fixedMm: 0 }, devices)
     expect(at710.length).toBeGreaterThanOrEqual(at630.length)
   })
 })

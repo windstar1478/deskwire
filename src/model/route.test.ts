@@ -147,3 +147,26 @@ describe('선이 다른 물건을 뚫지 않는다', () => {
     }
   })
 })
+
+describe('배선홈은 폭이 있다', () => {
+  it('홈 한가운데에 기기가 서 있어도 옆으로 비켜 지나간다', () => {
+    // 2i2 가 책상 정중앙 = 배선홈 중심과 같은 x 에 있다.
+    const itf = dIndex.get('itf')!
+    expect(itf.pos.x).toBe(desk.cableHole!.x)
+
+    const pIdx = indexPorts(devices)
+    const c = cables.find((x) => x.id === 'c-usb-st')!
+    const a = ownerOf(c.from, pIdx, dIndex)!
+    const b = ownerOf(c.to, pIdx, dIndex)!
+    const path = routeCable(a, b, H, dIndex, desk, routeOptsFor(c, devices))
+
+    // 홈 폭 안에서, 중심은 비켜 간다
+    const hole = desk.cableHole!
+    const through = path.filter((p) => Math.abs(p.z - (desk.d - hole.depth / 2)) < 1)
+    expect(through.length).toBeGreaterThan(0)
+    for (const p of through) {
+      expect(Math.abs(p.x - hole.x)).toBeLessThanOrEqual(hole.w / 2)
+    }
+    expect(through.some((p) => p.x !== hole.x)).toBe(true)
+  })
+})
